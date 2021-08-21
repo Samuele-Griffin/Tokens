@@ -35,7 +35,7 @@ let usuarioSchema = new Schema({
     },
     role: {
         type: String,
-        default: 'USER_PROFILE',
+        default: 'user',
         required: [false],
         enum: values,
     },

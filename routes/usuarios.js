@@ -5,14 +5,23 @@ const Usuario = require('../models/usuarios');
 let bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const underscore = require('underscore');
+const autentificacion = require('../middlewares/auth.js');
+const { validatorUser } = require('../middlewares/authentication.js');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(bodyParser.json());
 
-app.get('/usuarios', (req, res) => {
+app.get('/tokenstatus', (req, res) => {
+    return res.status(200).json({
+        usuario: req.usuario,
+    })
+});
+
+app.get('/usuarios', [validatorUser], (req, res, next) => {
     let desde = Number(req.query.desde || 0);
     let hasta = Number(req.query.hasta || 0);
+
     Usuario.find({ estado: true }, 'nombre email google img estado')
         .skip(desde)
         .limit(hasta)
@@ -33,7 +42,7 @@ app.get('/usuarios', (req, res) => {
         });
 });
 
-app.post("/usuarios", (req, res) => {
+app.post("/usuarios", [validatorUser, autentificacion.verificarAdmin], (req, res) => {
     let body = req.body;
     let usuario = new Usuario({
         nombre: body.nombre,
@@ -56,7 +65,7 @@ app.post("/usuarios", (req, res) => {
     });
 });
 
-app.put("/usuarios/:id", (req, res) => {
+app.put("/usuarios/:id", [validatorUser, autentificacion.verificarAdmin], (req, res) => {
     let id = req.params.id;
     let body = underscore.pick(req.body, [
         "nombre",
@@ -84,11 +93,11 @@ app.put("/usuarios/:id", (req, res) => {
     );
 });
 
-app.delete("/usuarios/:id", (req, res) => {
+app.delete("/usuarios/:id", [validatorUser, autentificacion.verificarAdmin], (req, res) => {
     let id = req.params.id;
     let user = {
         estado: false,
-    }
+    };
     Usuario.findByIdAndUpdate(id, user, { new: true }, (err, usuarioBorrado) => {
         if (err) {
             return res.status(400).json({
